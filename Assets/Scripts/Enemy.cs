@@ -13,22 +13,37 @@ namespace Scripts
         [SerializeField] Color aggroColor;
         [SerializeField] Color defaultColor;
         [SerializeField] float damage;
+        [SerializeField] float colorChangeDuration = 2f;
 
         Rigidbody2D rb;
         SpriteRenderer spriteRenderer;
 
         Coroutine colorChangeRoutine;
+        Color colorToChangeTo;
 
 
         Vector2 target;
+
         bool isAggro;
+        
+        public bool IsAggro
+        {
+            get => isAggro;
+            private set
+            {
+                if(IsAggro == value) return;
+                isAggro = value;
+                StopAllCoroutines(); //This would need to change, if we have multiple routines
+                colorToChangeTo = IsAggro ? aggroColor : defaultColor;
+                StartCoroutine(ColorChange(colorToChangeTo));
+            }
+        }
 
         void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             ChangeColor(defaultColor);
-            StartCoroutine(ColorChange());
         }
 
         // void FixedUpdate()
@@ -40,7 +55,7 @@ namespace Scripts
         void FixedUpdate()
         {
             CheckForPlayer();
-            if (!isAggro) return;
+            if (!IsAggro) return;
             Vector2 directionalVector = target - (Vector2)transform.position;
             rb.linearVelocity = new Vector2(directionalVector.normalized.x * moveSpeed, 0);
         }
@@ -52,19 +67,14 @@ namespace Scripts
             {
                 target = hitResult.transform.position;
                 Vector2 directionalVector = target - (Vector2)transform.position;
-                RaycastHit2D obstacleHitResult = Physics2D.Raycast(transform.position, directionalVector,
-                    Vector2.Distance(transform.position, target), obstacleLayerMask);
-                isAggro = !obstacleHitResult;
-                // if (colorChangeRoutine != null) return;
-                // colorChangeRoutine = StartCoroutine(ColorChange());
+                RaycastHit2D obstacleHitResult = Physics2D.Raycast(transform.position, directionalVector, Vector2.Distance(transform.position, target), obstacleLayerMask);
+                IsAggro = !obstacleHitResult;
             }
-            else isAggro = false;
-            //if(colorChangeRoutine == null) return;
-            //StopCoroutine(colorChangeRoutine);
-            // colorChangeRoutine = null;
-
-            //Color color = isAggro ? aggroColor : defaultColor; //WTF-Bedingung = What ? True : False
-            //ChangeColor(color);
+            else
+            {
+                IsAggro = false;
+            }
+            
         }
 
         void ChangeColor(Color _color)
@@ -73,24 +83,21 @@ namespace Scripts
             var color = Color.Lerp(defaultColor, aggroColor, Time.deltaTime * 0.8f);
             spriteRenderer.color = color;
         }
-
-        IEnumerator ColorChange()
+        
+        
+        IEnumerator ColorChange(Color _colorToChangeTo)
         {
-            float duration = 2f;
+            Color startColor = spriteRenderer.color;
+            
             float t = 0;
 
-            while (t < duration)
+            while (t < colorChangeDuration)
             {
-                Color currentColor = Color.Lerp(defaultColor, aggroColor, t / duration);
+                Color currentColor = Color.Lerp(startColor, _colorToChangeTo, t / colorChangeDuration);
                 spriteRenderer.color = currentColor;
                 t += Time.deltaTime;
-                // Debug.Log("T:" + t);
-                //Debug.Log("T / Duration: "+ t / duration);
                 yield return null;
             }
-
-            yield return new WaitForSeconds(2f);
-
             Debug.Log("ColorChange done! :) ");
             colorChangeRoutine = null;
         }

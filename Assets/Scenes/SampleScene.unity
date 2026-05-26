@@ -305,6 +305,7 @@ MonoBehaviour:
   aggroColor: {r: 1, g: 0, b: 0, a: 1}
   defaultColor: {r: 0, g: 0.06262493, b: 1, a: 1}
   damage: 5
+  colorChangeDuration: 5
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
